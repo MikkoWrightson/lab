@@ -1,0 +1,52 @@
+name: Run Ansible Playbook
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  ansible-playbook:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ANSIBLE_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+
+      # 1. Check out the repository
+      - name: Check out repo
+        uses: actions/checkout@v3
+
+      # 2. Install Ansible
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible
+          ansible --version
+
+      - name: Install ansible-lint
+        run: |
+          pip install ansible-lint
+
+      - name: Lint ansible playbooks
+        run: |
+          ansible-lint playbook.yml
+
+#      # 3. (Optional) Install Ansible Galaxy roles/collections
+#      - name: Install Ansible roles and collections
+#        if: exists('requirements.yml')
+#        run: |
+#          ansible-galaxy install -r requirements.yml
+
+      # 4. Run Ansible Playbook
+      - name: Run Ansible Playbook
+        run: |
+          # Adjust 'hosts' or 'inventory' path to match your repo structure
+          ansible-playbook -i inventory playbook.yml --syntax-check
+          ansible-playbook -i inventory playbook.yml
+
